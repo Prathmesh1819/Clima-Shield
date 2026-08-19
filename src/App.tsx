@@ -66,8 +66,7 @@ export const AppContent: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1"><Award className="w-3.5 h-3.5 text-amber-400" /> Smart India Hackathon</span>
-            <span>• React 19 + TypeScript + Leaflet + Tailwind</span>
+            <span className="flex items-center gap-1 font-semibold text-slate-300"><Award className="w-3.5 h-3.5 text-amber-400" /> Developed by team 18</span>
           </div>
         </div>
       </footer>
