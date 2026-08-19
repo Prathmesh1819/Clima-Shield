@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   LogIn, Phone, Lock, Eye, EyeOff, ShieldCheck, 
-  AlertCircle, ArrowRight, Sparkles, UserCheck, KeyRound 
+  AlertCircle, ArrowRight, Sparkles, UserCheck, KeyRound, CheckCircle2, X 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, sendResetEmail, isFirebaseActive } = useAuth();
   const navigate = useNavigate();
 
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
@@ -16,6 +16,11 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetStatusMsg, setResetStatusMsg] = useState<{ isError: boolean; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +39,6 @@ export const LoginPage: React.FC = () => {
     try {
       const res = await login(phoneOrEmail, password);
       if (res.success) {
-        // If admin, navigate to admin dashboard, else rider dashboard
         if (phoneOrEmail.trim().toLowerCase() === 'admin@climashield.in') {
           navigate('/admin');
         } else {
@@ -50,7 +54,16 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Demo Login Quick Fill
+  const handleSendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+    const res = await sendResetEmail(resetEmail.trim());
+    setResetStatusMsg({
+      isError: !res.success,
+      text: res.message || 'Password reset link dispatched.'
+    });
+  };
+
   const handleQuickFillRider = () => {
     setPhoneOrEmail('9876543210');
     setPassword('Rider@123');
@@ -78,6 +91,12 @@ export const LoginPage: React.FC = () => {
           <p className="text-xs text-slate-400">
             Access your ClimaShield wage protection dashboard & claims log.
           </p>
+
+          {isFirebaseActive && (
+            <span className="inline-block text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+              🔥 FIREBASE AUTH ACTIVE
+            </span>
+          )}
         </div>
 
         {/* Quick Demo Shortcuts Banner */}
@@ -137,8 +156,8 @@ export const LoginPage: React.FC = () => {
               <label className="font-semibold text-slate-300">Password</label>
               <button
                 type="button"
-                onClick={() => alert('Demo Reset: You can login with password "Rider@123" for demo rider or "Admin@123" for admin.')}
-                className="text-[11px] text-cyan-400 hover:underline"
+                onClick={() => { setShowForgotModal(true); setResetStatusMsg(null); }}
+                className="text-[11px] text-cyan-400 hover:underline cursor-pointer"
               >
                 Forgot password?
               </button>
@@ -202,6 +221,55 @@ export const LoginPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* FORGOT PASSWORD MODAL */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-white flex items-center gap-2">
+                <Lock className="w-4 h-4 text-cyan-400" /> Firebase Password Reset
+              </span>
+              <button onClick={() => setShowForgotModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-slate-400">
+              Enter your registered email address to receive a secure password reset link powered by Firebase Authentication.
+            </p>
+
+            {resetStatusMsg && (
+              <div className={`p-3 rounded-xl border flex items-center gap-2 ${
+                resetStatusMsg.isError 
+                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-300' 
+                  : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+              }`}>
+                {resetStatusMsg.isError ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                <span>{resetStatusMsg.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSendReset} className="space-y-3">
+              <input
+                type="email"
+                required
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="rider@example.com"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-cyan-500"
+              />
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20"
+              >
+                Send Password Reset Email
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
